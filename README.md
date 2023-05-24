@@ -1,4 +1,4 @@
-# Object Viewer
+# Mesh Lighting
 
 メッシュとライティングの3Dアプリ
 
@@ -8,7 +8,8 @@ This is an application created base on the framework of "[Hazel Engin](https://g
 
 This application uses **ImGui** for UI and **OpenGL** for Rendering. 
 
-### Diffusion Lighting Simulation with Bunny Mesh 
+- Diffusion Lighting 
+- OBJ Files Drop Reading
 
 ![](gif/screenshot.png)
 
