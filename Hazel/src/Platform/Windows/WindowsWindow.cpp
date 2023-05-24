@@ -57,6 +57,14 @@ namespace Hazel {
 		SetVSync(true);
 
 		// Set GLFW callbacks
+		glfwSetDropCallback(m_Window, [](GLFWwindow* window, int count, const char** paths)
+		{
+			WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);
+			std::string filename(*paths);
+			DragFileEvent event(filename);
+			data.EventCallback(event);
+		});
+
 		glfwSetWindowSizeCallback(m_Window, [](GLFWwindow* window, int width, int height)
 		{
 			WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);

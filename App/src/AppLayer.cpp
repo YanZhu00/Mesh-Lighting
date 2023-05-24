@@ -1,5 +1,6 @@
 #include "AppLayer.h"
 
+
 namespace Hazel {
 	AppLayer::AppLayer()
 	{
@@ -54,15 +55,6 @@ namespace Hazel {
 
 		if (ImGui::BeginMenuBar())
 		{
-			if (ImGui::BeginMenu("File"))
-			{
-				if (ImGui::MenuItem("Open File...", "Ctrl+O"));
-
-				if (ImGui::MenuItem("Exit"));
-
-				ImGui::EndMenu();
-			}
-
 			ImGui::EndMenuBar();
 		}
 
@@ -130,6 +122,18 @@ namespace Hazel {
 		dispatcher.Dispatch<MouseButtonPressedEvent>(HZ_BIND_EVENT_FN(AppLayer::OnMouseButtonPressed));
 		dispatcher.Dispatch<MouseButtonReleasedEvent>(HZ_BIND_EVENT_FN(AppLayer::OnMouseButtonReleased));
 		dispatcher.Dispatch<MouseScrolledEvent>(HZ_BIND_EVENT_FN(AppLayer::OnMouseScrolled));
+		dispatcher.Dispatch<DragFileEvent>(HZ_BIND_EVENT_FN(AppLayer::OnFileDraged));
+	}
+
+	bool AppLayer::OnFileDraged(Hazel::DragFileEvent& event)
+	{
+		m_ModelingCamera->Reset();
+		
+		std::string filename = event.GetFileName();
+		m_Scene->m_Object->ReadFile(filename);
+		m_Scene->m_Object->ResetColor();
+
+		return false;
 	}
 
 	bool AppLayer::OnMouseScrolled(Hazel::MouseScrolledEvent& event)

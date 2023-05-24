@@ -26,6 +26,7 @@ namespace Hazel {
 		unsigned int m_Width, m_Height;
 	};
 
+
 	class HAZEL_API WindowCloseEvent : public Event
 	{
 	public:
@@ -60,5 +61,16 @@ namespace Hazel {
 
 		EVENT_CLASS_TYPE(AppRender)
 		EVENT_CLASS_CATEGORY(EventCategoryApplication)
+	};
+
+	class HAZEL_API DragFileEvent : public Event
+	{
+	public:
+		DragFileEvent(std::string filename): m_FileName(filename) {}
+		inline std::string GetFileName() const { return m_FileName; }
+		EVENT_CLASS_TYPE(DragFile)
+		EVENT_CLASS_CATEGORY(EventCategoryApplication)
+	private:
+		std::string m_FileName;
 	};
 }

@@ -48,6 +48,7 @@ namespace Hazel {
 		bool OnMouseButtonPressed(MouseButtonPressedEvent& event);
 		bool OnMouseButtonReleased(MouseButtonReleasedEvent& event);
 		bool OnMouseScrolled(Hazel::MouseScrolledEvent& event);
+		bool OnFileDraged(Hazel::DragFileEvent& event);
 
 		inline void DrawColorEditor();
 		inline void DrawLight();

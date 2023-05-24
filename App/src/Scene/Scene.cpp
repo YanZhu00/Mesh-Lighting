@@ -11,8 +11,6 @@ Scene::Scene()
 	m_Object = std::make_shared<Object>();
 	m_LightSource = std::make_shared<LightSource>();
 
-	m_Object->ReadFile("assets/objs/bunny.obj");
-
 	int range = 100;
 	for (int i = -range; i <= range; ++i)
 	{

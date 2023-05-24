@@ -1,78 +1,201 @@
 #include "Object.h"
 
+std::vector<std::string> splitString(const std::string& str, const std::string& token) {
+    std::vector<std::string> substrings;
+    std::size_t startPos = 0;
+    std::size_t spacePos = str.find(token);
+
+    while (spacePos != std::string::npos) {
+        std::string substring = str.substr(startPos, spacePos - startPos);
+
+        substrings.push_back(substring);
+
+        startPos = spacePos + token.length();
+        spacePos = str.find(token, startPos);
+    }
+
+    std::string lastSubstring = str.substr(startPos);
+    if (lastSubstring[0] != '\n')
+        substrings.push_back(lastSubstring);
+
+    return substrings;
+}
+
 Object::Object()
 {
     m_Color = glm::vec3(1., 1., 1.);
 }
 
 
-void Object::ReadFile(const char* filename)
+void Object::ReadFile(std::string filename)
 {
-    FILE* file = fopen(filename, "r");
+    FILE* file = fopen(filename.c_str(), "r");
     if (!file) {
         std::cerr << "Failed to open file: " << filename << std::endl;
     }
 
-    float xMax = 0;
-    float yMax = 0;
-    float zMax = 0;
-
+    std::vector<float> v;
+    std::vector<float> vn;
+    std::vector<int> vidx;
+    std::vector<int> vnidx;
+    int count = 0;
     char line[256];
     while (fgets(line, sizeof(line), file)) {
         if (line[0] == 'v') {
             if (line[1] == ' ') {
                 float x, y, z;
                 sscanf(line, "v %f %f %f", &x, &y, &z);
-                if (abs(x) > xMax) xMax = abs(x);
-                if (abs(y) > yMax) yMax = abs(y);
-                if (abs(z) > zMax) zMax = abs(z);
-                m_Vertices.push_back(x);
-                m_Vertices.push_back(y);
-                m_Vertices.push_back(z);
+                v.push_back(x);
+                v.push_back(y);
+                v.push_back(z);
             }
             else if (line[1] == 'n') {
                 float x, y, z;
                 sscanf(line, "vn %f %f %f", &x, &y, &z);
-                m_Normals.push_back(x);
-                m_Normals.push_back(y);
-                m_Normals.push_back(z);
+                vn.push_back(x);
+                vn.push_back(y);
+                vn.push_back(z);
             }
         }
         else if (line[0] == 'f') {
-            unsigned int f1, f2, f3, fn1, fn2, fn3;
-            sscanf(line, "f %d//%d %d//%d %d//%d",
-                &f1, &fn1,
-                &f2, &fn2,
-                &f3, &fn3);
-            m_Faces.push_back(f1 - 1);
-            m_Faces.push_back(f2 - 1);
-            m_Faces.push_back(f3 - 1);
-            m_FaceNormals.push_back(fn1 - 1);
-            m_FaceNormals.push_back(fn2 - 1);
-            m_FaceNormals.push_back(fn3 - 1);
+            std::string faceString(line);
+            faceString = faceString.substr(2);
+            std::vector<std::string> subStrings = splitString(faceString, " ");
+            std::vector<int> vidxTemp;
+            std::vector<int> vnidxTemp;
+            if (faceString.find("//") != std::string::npos)
+            {
+                //   1//2 2//3 3//4
+                for (int i = 0; i < subStrings.size(); i++)
+                {
+                    std::vector<std::string> indices = splitString(subStrings[i], "//");
+                    //std::cout << indices[1] << std::endl;
+                    int vertexIndex = std::stoi(indices[0]);
+                    if (vertexIndex < 0) vertexIndex = v.size() / 3 + vertexIndex;
+                    else vertexIndex -= 1;
+                    vidxTemp.push_back(vertexIndex);
+
+                    vertexIndex = std::stoi(indices[1]);
+                    if (vertexIndex < 0) vertexIndex = vn.size() / 3 + vertexIndex;
+                    else vertexIndex -= 1;
+                    vnidxTemp.push_back(vertexIndex);
+                }
+            }
+            else if (faceString.find("/") != std::string::npos)
+            {
+                //    1/2 2/3 3/4 or 1/2/3 2/3/4 3/4/5
+                for (int i = 0; i < subStrings.size(); i++)
+                {
+                    std::vector<std::string> indices = splitString(subStrings[i], "/");
+                    if (indices.size() == 0) std::cout << faceString << std::endl;
+                    int vertexIndex = std::stoi(indices[0]);
+                    if (vertexIndex < 0) vertexIndex = v.size() / 3 + vertexIndex;
+                    else vertexIndex -= 1;
+                    vidxTemp.push_back(vertexIndex);
+
+                    if (indices.size() == 2)
+                    {
+                        vnidxTemp.push_back(-1); // no normals
+                    }
+                    else if (indices.size() == 3)
+                    {
+                        vertexIndex = std::stoi(indices[2]);
+                        if (vertexIndex < 0) vertexIndex = vn.size() / 3 + vertexIndex;
+                        else vertexIndex -= 1;
+                        vnidxTemp.push_back(vertexIndex);
+                    }
+                }
+            }
+            else
+            {
+                for (int i = 0; i < subStrings.size(); i++)
+                {
+                    int vertexIndex = std::stoi(subStrings[i]);
+                    if (vertexIndex < 0) vertexIndex = v.size() / 3 + vertexIndex;
+                    else vertexIndex -= 1;
+                    vidxTemp.push_back(vertexIndex);
+                    vnidxTemp.push_back(-1);
+                }
+            }
+            for (int i = 1; i <= subStrings.size() - 2; ++i)
+            {
+                // triangulate
+                vidx.push_back(vidxTemp[0]);
+                vidx.push_back(vidxTemp[i]);
+                vidx.push_back(vidxTemp[i + 1]);
+                vnidx.push_back(vnidxTemp[0]);
+                vnidx.push_back(vnidxTemp[i]);
+                vnidx.push_back(vnidxTemp[i + 1]);
+            }
+
         }
+
     }
 
     fclose(file);
 
+    float xMax = -99999999.0;
+    float yMax = -99999999.0;
+    float zMax = -99999999.0;
+    float xMin = 99999999.0;
+    float yMin = 99999999.0;
+    float zMin = 99999999.0;
+    double xCenter = 0.0;
+    double yCenter = 0.0;
+    double zCenter = 0.0;
+    for (int i = 0; i < v.size() - 2; i += 3)
+    {
+        xCenter += v[i];
+        yCenter += v[i + 1];
+        zCenter += v[i + 2];
+        if (v[i] > xMax) xMax = v[i];
+        if (v[i + 1] > yMax) yMax = v[i + 1];
+        if (v[i + 2] > zMax) zMax = v[i + 2];
+        if (v[i] < xMin) xMin = v[i];
+        if (v[i + 1] < yMin) yMin = v[i + 1];
+        if (v[i + 2] < zMin) zMin = v[i + 2];
+    }
 
-    const int n = m_Faces.size();
+    xCenter /= (v.size() / 3);
+    yCenter /= (v.size() / 3);
+    zCenter /= (v.size() / 3);
+
+    for (int i = 0; i < v.size() - 2; i += 3)
+    {
+        v[i] -= xCenter;
+        v[i + 1] -= yCenter;
+        v[i + 2] -= zCenter;
+    }
+
+    float maxLength = std::max({ xMax - xMin, yMax - yMin, zMax - zMin });
+
+    m_Scale = 4. / maxLength;
+
+    const int n = vidx.size(); // total vertices;
     std::vector<float> vertexbuffer(6 * n);
     for (int i = 0; i < n; i++)
     {
-        vertexbuffer[i * 6 + 0] = m_Vertices[m_Faces[i] * 3 + 0];
-        vertexbuffer[i * 6 + 1] = m_Vertices[m_Faces[i] * 3 + 1];
-        vertexbuffer[i * 6 + 2] = m_Vertices[m_Faces[i] * 3 + 2];
-        vertexbuffer[i * 6 + 3] = m_Normals[m_FaceNormals[i] * 3 + 0];
-        vertexbuffer[i * 6 + 4] = m_Normals[m_FaceNormals[i] * 3 + 1];
-        vertexbuffer[i * 6 + 5] = m_Normals[m_FaceNormals[i] * 3 + 2];
+        vertexbuffer[i * 6 + 0] = v[vidx[i] * 3 + 0];
+        vertexbuffer[i * 6 + 1] = v[vidx[i] * 3 + 1];
+        vertexbuffer[i * 6 + 2] = v[vidx[i] * 3 + 2];
+        if (vnidx[i] >= 0)
+        {
+            vertexbuffer[i * 6 + 3] = vn[vnidx[i] * 3 + 0];
+            vertexbuffer[i * 6 + 4] = vn[vnidx[i] * 3 + 1];
+            vertexbuffer[i * 6 + 5] = vn[vnidx[i] * 3 + 2];
+        }
+        else
+        {
+            vertexbuffer[i * 6 + 3] = 0.;
+            vertexbuffer[i * 6 + 4] = 0.;
+            vertexbuffer[i * 6 + 5] = 0.;
+        }
     }
     std::vector<unsigned int> indexbuffer(n * 6);
     for (int i = 0; i < 6 * n; i++)
     {
         indexbuffer[i] = i;
     }
-
 
     m_VertexArray = std::make_shared<Hazel::VertexArray>();
     m_VertexBuffer = std::make_shared<Hazel::VertexBuffer>(&vertexbuffer[0], vertexbuffer.size() * sizeof(float));
@@ -82,8 +205,6 @@ void Object::ReadFile(const char* filename)
     m_Layout->Push<float>(3);
     m_VertexArray->AddBuffer(*m_VertexBuffer, *m_Layout);
 
-    float max = std::max({ xMax, yMax, zMax });
-    m_Scale = 3 / (max + 0.0000001f);
     m_read = true;
 }
 
@@ -106,4 +227,9 @@ void Object::Draw(std::shared_ptr<Hazel::Shader> shader, CameraMatrices matrices
 void Object::ResetScale()
 {
     m_Scale = 1.f;
+}
+
+void Object::ResetColor()
+{
+    m_Color = glm::vec3(1., 1., 1.);
 }

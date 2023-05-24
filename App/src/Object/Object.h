@@ -29,9 +29,10 @@ class Object
 {
 public:
     Object();
-    void ReadFile(const char* filename);
+    void ReadFile(std::string filename);
     void Draw(std::shared_ptr<Hazel::Shader> shader, CameraMatrices matrices, bool left);
     void ResetScale();
+    void ResetColor();
 
     glm::vec3 m_Color;
     float m_Scale;
